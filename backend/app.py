@@ -29,14 +29,26 @@ def create_app() -> Flask:
     CORS(app, resources={r"/api/*": {"origins": "*"}})
 
     cfg = InferenceConfig(
-        model_path=os.getenv("ECOSONIC_MODEL_PATH", "best_model.pth"),
-        train_csv_path=os.getenv("ECOSONIC_TRAIN_CSV", "train.csv"),
-        taxonomy_csv_path=os.getenv("ECOSONIC_TAXONOMY_CSV", "taxonomy.csv"),
-    )
+    model_path=os.getenv("ECOSONIC_MODEL_PATH", "best_model.pth"),
+    train_csv_path=os.getenv("ECOSONIC_TRAIN_CSV", "train.csv"),
+    taxonomy_csv_path=os.getenv("ECOSONIC_TAXONOMY_CSV", "taxonomy.csv"),
+)
 
-    class_list = load_class_list(cfg)
-    taxonomy = load_taxonomy(cfg)
-    model = load_model(cfg, class_list)
+# 🔽 ADD THIS
+import urllib.request
+
+MODEL_URL = os.getenv("MODEL_URL")
+MODEL_PATH = cfg.model_path
+
+if MODEL_URL and not os.path.exists(MODEL_PATH):
+    print(f"Downloading model from {MODEL_URL} ...")
+    urllib.request.urlretrieve(MODEL_URL, MODEL_PATH)
+    print("Model downloaded successfully.")
+
+class_list = load_class_list(cfg)
+taxonomy = load_taxonomy(cfg)
+model = load_model(cfg, class_list)
+
 
     @app.get("/api/health")
     def health():
