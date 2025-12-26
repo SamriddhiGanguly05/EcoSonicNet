@@ -1,0 +1,19 @@
+# Production dependencies for Linux containers (Render/Docker)
+# Keep this separate from Windows/local requirements to avoid +cpu wheel issues.
+flask
+flask-cors
+gunicorn
+numpy
+pandas
+librosa
+timm
+soundfile
+
+# CPU PyTorch (Linux wheels are provided on PyPI without "+cpu" suffix)
+torch==2.6.0
+torchaudio==2.6.0
+
+
+
+
+

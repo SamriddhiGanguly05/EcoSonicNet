@@ -1,0 +1,12 @@
+streamlit
+torch==2.8.0+cpu
+torchaudio==2.8.0+cpu
+--extra-index-url https://download.pytorch.org/whl/cpu
+timm
+librosa
+numpy
+pandas
+plotly
+gdown
+flask
+flask-cors

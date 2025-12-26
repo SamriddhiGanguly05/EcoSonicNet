@@ -1,0 +1,17 @@
+services:
+  - type: web
+    name: ecosonicnet
+    env: docker
+    plan: free
+    autoDeploy: true
+    healthCheckPath: /api/health
+    envVars:
+      - key: PORT
+        value: "10000"
+      - key: SERVE_UI
+        value: "1"
+
+
+
+
+
