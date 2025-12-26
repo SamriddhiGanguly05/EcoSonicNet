@@ -12,14 +12,15 @@ import torch
 
 @dataclass(frozen=True)
 class InferenceConfig:
-    model_path: str = "best_model.pth"
+    model_path: str = os.getenv("MODEL_PATH", "best_model.pth")
     train_csv_path: str = "train.csv"
     taxonomy_csv_path: str = "taxonomy.csv"
     sample_rate: int = 32000
     n_fft: int = 1024
     hop_length: int = 320
     n_mels: int = 224
-    spec_size: int = 224  # 224x224
+    spec_size: int = 224
+
 
 
 def load_taxonomy(cfg: InferenceConfig) -> pd.DataFrame:
@@ -138,5 +139,6 @@ def save_bytes_to_temp(data: bytes, filename: str) -> str:
     with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as tmp:
         tmp.write(data)
         return tmp.name
+
 
 
