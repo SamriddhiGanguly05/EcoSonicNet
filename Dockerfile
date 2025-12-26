@@ -26,7 +26,6 @@ RUN pip install --no-cache-dir -r /app/requirements.prod.txt
 
 # App code + model/assets
 COPY backend/ /app/backend/
-COPY best_model.pth /app/best_model.pth
 COPY train.csv /app/train.csv
 COPY taxonomy.csv /app/taxonomy.csv
 
@@ -37,6 +36,7 @@ EXPOSE 10000
 
 # Gunicorn in production
 CMD ["gunicorn", "-w", "1", "-k", "gthread", "--threads", "4", "-b", "0.0.0.0:10000", "backend.wsgi:app"]
+
 
 
 
