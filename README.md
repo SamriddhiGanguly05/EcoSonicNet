@@ -118,6 +118,17 @@ Returns:
 
 ---
 
+## Pretrained Model
+
+Due to GitHub file size limits, the trained model weights are provided
+via GitHub Releases.
+
+Download:
+https://github.com/SamriddhiGanguly05/EcoSonicNet/releases
+
+After downloading, place the file in the project root directory:
+
+
 ## Frontend (React)
 
 Source: `frontend/src/App.jsx`
@@ -196,6 +207,7 @@ py -0p
 ## Legacy Streamlit UI
 
 The original Streamlit UI is still in `streamlit_app.py`, but the recommended interface is now the React + Flask app described above.
+
 
 
 
