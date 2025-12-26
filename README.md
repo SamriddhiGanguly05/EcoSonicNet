@@ -206,7 +206,8 @@ py -0p
 
 ## Legacy Streamlit UI
 
-The original Streamlit UI is still in `streamlit_app.py`, but the recommended interface is now the React + Flask app described above.
+The recommended interface is now the React + Flask app described above.
+
 
 
 
