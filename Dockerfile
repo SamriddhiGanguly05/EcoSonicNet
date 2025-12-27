@@ -1,44 +1,55 @@
 # ---------- Frontend build ----------
 FROM node:22-alpine AS frontend_build
 WORKDIR /app/frontend
+
 COPY frontend/package*.json ./
 RUN npm ci
+
 COPY frontend/ ./
 RUN npm run build
 
+
 # ---------- Backend runtime ----------
-FROM python:3.10-slim AS runtime
+FROM python:3.10-slim
 WORKDIR /app
 
-# System deps + curl for model download
+# System dependencies (audio + curl)
 RUN apt-get update && apt-get install -y --no-install-recommends \
     libsndfile1 \
+    ffmpeg \
     curl \
     && rm -rf /var/lib/apt/lists/*
 
+# Environment variables
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
-    PORT=10000 \
     SERVE_UI=1 \
     MODEL_PATH=/app/best_model.pth
 
-# Python deps
-COPY requirements.prod.txt /app/requirements.prod.txt
-RUN pip install --no-cache-dir -r /app/requirements.prod.txt
+# Install Python dependencies (CPU-only torch)
+COPY requirements.prod.txt .
+RUN pip install --no-cache-dir -r requirements.prod.txt
 
-# App code + data
-COPY backend/ /app/backend/
-COPY train.csv /app/train.csv
-COPY taxonomy.csv /app/taxonomy.csv
+# Backend source
+COPY backend/ ./backend/
 
-# Download model from GitHub Releases
+# Data files
+COPY train.csv .
+COPY taxonomy.csv .
+
+# Download trained model (GitHub Release)
 RUN curl -L \
   https://github.com/SamriddhiGanguly05/EcoSonicNet/releases/download/v1.0/best_model.pth \
   -o /app/best_model.pth
 
-# Built frontend
+# Copy built frontend into backend-served static directory
 COPY --from=frontend_build /app/frontend/dist /app/frontend/dist
 
+# Render provides PORT automatically
 EXPOSE 10000
 
-CMD ["gunicorn", "-w", "1", "-k", "gthread", "--threads", "4", "-b", "0.0.0.0:10000", "backend.wsgi:app"]
+# IMPORTANT: use $PORT (Render injects it)
+CMD gunicorn backend.wsgi:app \
+    --bind 0.0.0.0:$PORT \
+    --workers 1 \
+    --threads 4
