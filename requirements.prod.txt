@@ -1,5 +1,6 @@
 # Production dependencies for Linux containers (Render/Docker)
-# Keep this separate from Windows/local requirements to avoid +cpu wheel issues.
+--extra-index-url https://download.pytorch.org/whl/cpu
+
 flask
 flask-cors
 gunicorn
@@ -9,11 +10,7 @@ librosa
 timm
 soundfile
 
-# CPU PyTorch (Linux wheels are provided on PyPI without "+cpu" suffix)
-torch==2.6.0
-torchaudio==2.6.0
-
-
-
-
-
+# CPU-only PyTorch (CRITICAL)
+torch==2.6.0+cpu
+torchaudio==2.6.0+cpu
+torchvision==0.21.0+cpu
