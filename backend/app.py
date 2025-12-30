@@ -17,7 +17,9 @@ from .inference import (
 
 
 def create_app() -> Flask:
-    # ---- Frontend build directory ----
+    # ------------------------------------------------------------------
+    # App + Frontend
+    # ------------------------------------------------------------------
     dist_dir = os.path.abspath(
         os.path.join(os.path.dirname(__file__), "..", "frontend", "dist")
     )
@@ -27,25 +29,39 @@ def create_app() -> Flask:
     app = Flask(
         __name__,
         static_folder=dist_dir if serve_ui else None,
-        static_url_path="" if serve_ui else None,
+        static_url_path="/",
     )
 
-    # ---- Upload size limit (default: 200MB) ----
+    # ------------------------------------------------------------------
+    # Basic config
+    # ------------------------------------------------------------------
     app.config["MAX_CONTENT_LENGTH"] = int(
         os.getenv("MAX_CONTENT_LENGTH", str(200 * 1024 * 1024))
     )
 
-    # ---- CORS (API only) ----
     CORS(app, resources={r"/api/*": {"origins": "*"}})
 
-    # ---- Inference configuration ----
+    # ------------------------------------------------------------------
+    # 🚨 GUARANTEED ROOT ENDPOINT (RENDER NEEDS THIS)
+    # ------------------------------------------------------------------
+    @app.get("/")
+    def root():
+        if serve_ui and os.path.exists(os.path.join(dist_dir, "index.html")):
+            return send_from_directory(dist_dir, "index.html")
+        return "EcoSonicNet backend is running", 200
+
+    # ------------------------------------------------------------------
+    # Inference configuration
+    # ------------------------------------------------------------------
     cfg = InferenceConfig(
         model_path=os.getenv("MODEL_PATH", "/app/best_model.pth"),
         train_csv_path=os.getenv("TRAIN_CSV", "train.csv"),
         taxonomy_csv_path=os.getenv("TAXONOMY_CSV", "taxonomy.csv"),
     )
 
-    # ---- Load model + metadata ONCE at startup ----
+    # ------------------------------------------------------------------
+    # Load model lazily (NOT during import)
+    # ------------------------------------------------------------------
     class_list = load_class_list(cfg)
     taxonomy = load_taxonomy(cfg)
     model = load_model(cfg, class_list)
@@ -53,7 +69,6 @@ def create_app() -> Flask:
     # ------------------------------------------------------------------
     # API ROUTES
     # ------------------------------------------------------------------
-
     @app.get("/api/health")
     def health():
         return jsonify(
@@ -61,7 +76,6 @@ def create_app() -> Flask:
                 "ok": True,
                 "num_classes": len(class_list),
                 "model_loaded": True,
-                "model_path": cfg.model_path,
             }
         )
 
@@ -109,15 +123,13 @@ def create_app() -> Flask:
                     pass
 
     # ------------------------------------------------------------------
-    # FRONTEND (React SPA)
+    # React SPA fallback
     # ------------------------------------------------------------------
-
     if serve_ui:
-        @app.route("/", defaults={"path": ""})
         @app.route("/<path:path>")
-        def serve_react(path: str):
+        def spa_fallback(path: str):
             target = os.path.join(dist_dir, path)
-            if path and os.path.isfile(target):
+            if os.path.isfile(target):
                 return send_from_directory(dist_dir, path)
             return send_from_directory(dist_dir, "index.html")
 
