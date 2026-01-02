@@ -1,10 +1,9 @@
 import os
-from typing import Any, Dict
+import urllib.request
+import gradio as gr
+import torch
 
-from flask import Flask, jsonify, request, send_from_directory
-from flask_cors import CORS
-
-from .inference import (
+from inference import (
     InferenceConfig,
     build_results,
     load_class_list,
@@ -12,125 +11,80 @@ from .inference import (
     load_taxonomy,
     predict_topk,
     preprocess_audio_to_tensor,
-    save_bytes_to_temp,
 )
 
+# -------------------------------------------------------
+# 🔽 Download model from GitHub Releases (once)
+# -------------------------------------------------------
+MODEL_URL = "https://github.com/SamriddhiGanguly05/EcoSonicNet/releases/download/v1.0/best_model.pth"
+MODEL_PATH = "best_model.pth"
 
-def create_app() -> Flask:
-    # ------------------------------------------------------------------
-    # App + Frontend
-    # ------------------------------------------------------------------
-    dist_dir = os.path.abspath(
-        os.path.join(os.path.dirname(__file__), "..", "frontend", "dist")
-    )
+if not os.path.exists(MODEL_PATH):
+    print("⬇️ Downloading model weights...")
+    urllib.request.urlretrieve(MODEL_URL, MODEL_PATH)
+    print("✅ Model downloaded")
 
-    serve_ui = os.getenv("SERVE_UI", "1") == "1"
+# -------------------------------------------------------
+# 🧠 Inference Configuration
+# -------------------------------------------------------
+cfg = InferenceConfig(
+    model_path=MODEL_PATH,
+    train_csv_path="train.csv",
+    taxonomy_csv_path="taxonomy.csv",
+)
 
-    app = Flask(
-        __name__,
-        static_folder=dist_dir if serve_ui else None,
-        static_url_path="/",
-    )
+print("📂 Loading class list and taxonomy...")
+class_list = load_class_list(cfg)
+taxonomy = load_taxonomy(cfg)
 
-    # ------------------------------------------------------------------
-    # Basic config
-    # ------------------------------------------------------------------
-    app.config["MAX_CONTENT_LENGTH"] = int(
-        os.getenv("MAX_CONTENT_LENGTH", str(200 * 1024 * 1024))
-    )
+print("🧠 Loading HTSAT-Swin model...")
+model = load_model(cfg, class_list)
+model.eval()
 
-    CORS(app, resources={r"/api/*": {"origins": "*"}})
+print("✅ Model ready")
 
-    # ------------------------------------------------------------------
-    # 🚨 GUARANTEED ROOT ENDPOINT (RENDER NEEDS THIS)
-    # ------------------------------------------------------------------
-    @app.get("/")
-    def root():
-        if serve_ui and os.path.exists(os.path.join(dist_dir, "index.html")):
-            return send_from_directory(dist_dir, "index.html")
-        return "EcoSonicNet backend is running", 200
+# -------------------------------------------------------
+# 🎵 Prediction Function (Gradio)
+# -------------------------------------------------------
+def predict(audio, top_k=5):
+    """
+    audio: filepath from Gradio
+    """
+    if audio is None:
+        return {"error": "No audio file provided"}
 
-    # ------------------------------------------------------------------
-    # Inference configuration
-    # ------------------------------------------------------------------
-    cfg = InferenceConfig(
-        model_path=os.getenv("MODEL_PATH", "/app/best_model.pth"),
-        train_csv_path=os.getenv("TRAIN_CSV", "train.csv"),
-        taxonomy_csv_path=os.getenv("TAXONOMY_CSV", "taxonomy.csv"),
-    )
+    try:
+        x, sr, num_samples = preprocess_audio_to_tensor(cfg, audio)
+        idx, probs = predict_topk(model, x, top_k=top_k)
+        results = build_results(idx, probs, class_list, taxonomy)
 
-    # ------------------------------------------------------------------
-    # Load model lazily (NOT during import)
-    # ------------------------------------------------------------------
-    class_list = load_class_list(cfg)
-    taxonomy = load_taxonomy(cfg)
-    model = load_model(cfg, class_list)
+        # Convert to Gradio Label format
+        output = {
+            r["species"]: float(r["probability"])
+            for r in results
+        }
 
-    # ------------------------------------------------------------------
-    # API ROUTES
-    # ------------------------------------------------------------------
-    @app.get("/api/health")
-    def health():
-        return jsonify(
-            {
-                "ok": True,
-                "num_classes": len(class_list),
-                "model_loaded": True,
-            }
-        )
+        return output
 
-    @app.post("/api/predict")
-    def predict():
-        if "file" not in request.files:
-            return jsonify({"error": "missing file"}), 400
+    except Exception as e:
+        return {"error": str(e)}
 
-        f = request.files["file"]
-        if not f or not f.filename:
-            return jsonify({"error": "empty upload"}), 400
+# -------------------------------------------------------
+# 🖥️ Gradio UI
+# -------------------------------------------------------
+interface = gr.Interface(
+    fn=predict,
+    inputs=[
+        gr.Audio(type="filepath", label="Upload Audio"),
+        gr.Slider(1, 10, value=5, step=1, label="Top-K Predictions"),
+    ],
+    outputs=gr.Label(num_top_classes=5, label="Predicted Species"),
+    title="EcoSonicNet – Bioacoustic Species Classifier",
+    description=(
+        "HTSAT-Swin Transformer for multi-species bioacoustic monitoring. "
+        "Upload an audio clip to identify species."
+    ),
+    allow_flagging="never",
+)
 
-        try:
-            top_k = int(request.form.get("top_k", "5"))
-        except ValueError:
-            return jsonify({"error": "top_k must be an integer"}), 400
-
-        top_k = max(1, min(top_k, 50))
-
-        temp_path = None
-        try:
-            data = f.read()
-            temp_path = save_bytes_to_temp(data, f.filename)
-
-            x, sr, num_samples = preprocess_audio_to_tensor(cfg, temp_path)
-            idx, probs = predict_topk(model, x, top_k=top_k)
-            results = build_results(idx, probs, class_list, taxonomy)
-
-            payload: Dict[str, Any] = {
-                "top_k": top_k,
-                "sample_rate": sr,
-                "num_samples": num_samples,
-                "results": results,
-            }
-            return jsonify(payload)
-
-        except Exception as e:
-            return jsonify({"error": str(e), "results": []}), 500
-
-        finally:
-            if temp_path and os.path.exists(temp_path):
-                try:
-                    os.unlink(temp_path)
-                except OSError:
-                    pass
-
-    # ------------------------------------------------------------------
-    # React SPA fallback
-    # ------------------------------------------------------------------
-    if serve_ui:
-        @app.route("/<path:path>")
-        def spa_fallback(path: str):
-            target = os.path.join(dist_dir, path)
-            if os.path.isfile(target):
-                return send_from_directory(dist_dir, path)
-            return send_from_directory(dist_dir, "index.html")
-
-    return app
+interface.launch()
