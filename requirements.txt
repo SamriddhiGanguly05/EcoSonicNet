@@ -9,4 +9,8 @@ pandas
 plotly
 gdown
 flask
+scipy
+tqdm
+gradio
+
 flask-cors
