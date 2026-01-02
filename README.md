@@ -1,11 +1,26 @@
 # EcoSonicNet — Bioacoustic Detection Web App (React + Flask + PyTorch)
 
-EcoSonicNet is a local web app that lets a user **upload an audio file** and get **Top‑K species predictions** with confidence and taxonomy metadata.
+EcoSonicNet is a bioacoustic detection system that lets a user **upload an audio file** and obtain **Top-K species predictions** along with confidence scores and taxonomy metadata.
+
+The project is implemented as:
+- A **local full-stack web application** (React + Flask)
+- A **publicly deployed demo** (Hugging Face Spaces)
 
 This repo contains:
 - **ML model inference** (PyTorch + timm Vision Transformer)
 - **Backend API** (Flask)
 - **Frontend UI** (React + Vite)
+
+---
+
+## 🚀 Live Deployment
+
+The model is deployed as an interactive web application using **Hugging Face Spaces**, allowing users to perform real-time inference without any local setup.
+
+🔗 **Live Demo (App UI):** https://guess0-ecosonicnet.hf.space  
+🔗 **Hugging Face Space:** https://huggingface.co/spaces/Guess0/EcoSonicNet  
+
+> Note: The Hugging Face deployment uses a Gradio-based interface for inference, while this repository contains the full React + Flask implementation for local and extensible use.
 
 ---
 
@@ -38,7 +53,7 @@ This repo contains:
 ## ML model overview
 
 - **Architecture**: Vision Transformer (ViT) from `timm` (`vit_base_patch16_224`)
-- **Input**: a **224×224 mel-spectrogram** treated like a 1‑channel image
+- **Input**: a **224×224 mel-spectrogram** treated like a 1-channel image
 - **Output**: softmax probability over **206 classes**
 - **Weights**: loaded from `best_model.pth`
 - **Device**: CPU (works without CUDA)
@@ -120,98 +135,12 @@ Returns:
 
 ## Pretrained Model
 
-Due to GitHub file size limits, the trained model weights are provided
-via GitHub Releases.
+Due to GitHub file size limits, the trained model weights are provided via **GitHub Releases**.
 
 Download:
 https://github.com/SamriddhiGanguly05/EcoSonicNet/releases
 
 After downloading, place the file in the project root directory:
 
-
-## Frontend (React)
-
-Source: `frontend/src/App.jsx`
-
-Features:
-- Upload an audio file + **audio preview**
-- Settings:
-  - Top‑K slider
-  - Confidence threshold filter (filters what’s displayed)
-- Results tabs:
-  - **Summary** (top prediction + table)
-  - **Chart** (confidence bars)
-  - **Details** (raw JSON response)
-
-### “No-fail UI” behavior
-
-If live inference fails (network, decoding, server error, etc.), the UI can show **simulated demo results** (clearly labeled) so the user never hits a dead end.
-
-### Confidence display rule
-
-The UI displays a **scaled confidence** in the range **(75%, 100%)** for presentation, while keeping the **raw model probabilities** intact in the Details/JSON.
-
----
-
-## Run locally
-
-### 1) Start backend
-
-From the repo root:
-
-```bash
-python -m pip install -r requirements.txt
-python -m backend.app
-```
-
-Backend URL: `http://127.0.0.1:5000`
-
-### 2) Start frontend
-
-```bash
-cd frontend
-npm install
-npm run dev
-```
-
-Frontend URL: `http://127.0.0.1:5173`
-
-> Vite dev proxy is already configured: `/api/*` → `http://localhost:5000`
-
----
-
-## Troubleshooting
-
-### “Site can’t be reached”
-
-- Confirm backend is running:
-  - Open `http://127.0.0.1:5000/api/health` (should return JSON)
-- Confirm frontend is running:
-  - Open `http://127.0.0.1:5173`
-
-### Windows note (multiple Python versions)
-
-If you have multiple Python versions installed, you may already have torch installed for one interpreter (e.g., Python 3.9) but not another (e.g., Python 3.13). Prefer running the backend with the interpreter that already has:
-- `torch`
-- `timm`
-- `librosa`
-
-Example:
-
-```bash
-py -0p
-```
-
----
-
-## Legacy Streamlit UI
-
-The recommended interface is now the React + Flask app described above.
-
-
-
-
-
-
-
-
+```text
+best_model.pth
