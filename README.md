@@ -133,6 +133,12 @@ Returns:
 
 ---
 
+## Results & Impact
+- Achieved 70% accuracy on validation dataset
+- Tested on real-world audio samples
+- Supports 206 species classification
+  
+
 ## Pretrained Model
 
 Due to GitHub file size limits, the trained model weights are provided via **GitHub Releases**.
