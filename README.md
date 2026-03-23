@@ -45,22 +45,7 @@ The model is deployed as an interactive web application using Hugging Face Space
 ---
 
 ## 🧩 System Architecture 
-User Audio Upload
-↓
-Audio Preprocessing (Resample → Mel Spectrogram)
-↓
-224×224 Spectrogram Image
-↓
-Vision Transformer (ViT / HTSAT-style model)
-↓
-Softmax Predictions (206 classes)
-↓
-Flask API (Inference + Processing)
-↓
-React Frontend (Visualization)
-↓
-Top-K Species + Confidence + Taxonomy
-
+![EcoSonicNet System Architecture](./system_arch_eco.png)
 
 ---
 
