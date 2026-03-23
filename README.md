@@ -76,21 +76,35 @@ Includes:
 
 ---
 
-## 📁 Project Structure 
+## 📁 Project Structure  
+
+```
 EcoSonicNet/
 │
-├── best_model.pth # Trained model weights (206 classes)
-├── train.csv # Training metadata
-├── taxonomy.csv # Taxonomy metadata
+├── best_model.pth        # Trained model weights (206 classes)
+├── train.csv             # Training metadata
+├── taxonomy.csv          # Taxonomy metadata
 │
 ├── backend/
-│ ├── app.py # Flask API
-│ └── inference.py # Preprocessing + model inference
+│   ├── app.py            # Flask API (/api/health, /api/predict)
+│   └── inference.py      # Preprocessing + model inference
 │
 ├── frontend/
-│ ├── src/App.jsx # UI logic
-│ └── vite.config.js # API proxy
-
+│   ├── src/
+│   │   └── App.jsx       # UI logic (upload + results)
+│   └── vite.config.js    # API proxy config
+│
+├── requirements.txt
+├── requirements.prod.txt
+├── Dockerfile
+├── render.yaml
+├── start_server.bat
+│
+├── dashboard.png
+├── system_arch_eco.png
+│
+└── README.md
+```
 
 ---
 
