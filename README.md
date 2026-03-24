@@ -1,4 +1,4 @@
-# 🌿 EcoSonicNet — Bioacoustic Species Classifier  
+#  EcoSonicNet — Bioacoustic Species Classifier  
 
 EcoSonicNet is an **end-to-end bioacoustic AI system** that classifies species from environmental audio recordings using a **Vision Transformer (ViT)**-based architecture, deployed as a **full-stack web application (React + Flask)**.
 
